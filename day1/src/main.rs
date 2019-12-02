@@ -1,12 +1,8 @@
-use std::fs::File;
-use std::io::prelude::*;
-use std::io::BufReader;
-
 fn main() -> std::io::Result<()> {
     let input = grab_input()?;
 
-    println!("part 1: {}", part1(&input));
-    println!("part 2: {}", part2(&input));
+    println!("1: {}", part1(&input));
+    println!("2: {}", part2(&input));
 
     Ok(())
 }
@@ -40,11 +36,9 @@ fn calculate_recursive_fuel(mass: i32) -> i32 {
 }
 
 fn grab_input() -> std::io::Result<Vec<i32>> {
-    let file = File::open("input")?;
-    let reader = BufReader::new(file);
-    let input: Vec<i32> = reader
+    let string = include_str!("./input").trim();
+    let input: Vec<i32> = string
         .lines()
-        .map(|x| x.unwrap())
         .map(|x| x.parse().unwrap())
         .collect();
 
