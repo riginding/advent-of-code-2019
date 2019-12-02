@@ -3,7 +3,7 @@ use ::std::convert::TryFrom;
 fn main() -> std::io::Result<()> {
     let mut input = get_input()?;
 
-    println!("1: {}", part1(&mut input));
+    part1(&mut input);
     part2(&mut input);
 
     Ok(())
@@ -54,7 +54,7 @@ struct IntCode {
 
 impl std::fmt::Display for IntCode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "result: {}", self.data[0])
+        write!(f, "{}", self.data[0])
     }
 }
 
@@ -118,15 +118,42 @@ fn get_input() -> std::io::Result<Vec<i32>> {
     Ok(data)
 }
 
-fn part1(input: &mut [i32]) -> IntCode {
+fn part1(input: &mut [i32]) {
+    input[1] = 12;
+    input[2] = 2;
+
     let mut program = IntCode::new(input.into());
     program.execute();
 
-    program
+    println!("1: {}", program)
 }
 
-// TODO make this nicer :)
 fn part2(input: &[i32]) {
+    let mut all = generate_possible_inputs();
+
+    let mut found = false;
+    while !found {
+        let possible_input = all.pop();
+        match possible_input {
+            Some((input1, input2)) => {
+                let mut data: Vec<i32> = input.into();
+                data[1] = input1;
+                data[2] = input2;
+
+                let mut program = IntCode::new(data.into());
+                program.execute();
+                found = program.data[0] == 19690720;
+                if found {
+                    println!("2: {}", 100 * input1 + input2)
+                }
+            },
+            None => break,
+        }
+
+    }
+}
+
+fn generate_possible_inputs() -> Vec<(i32, i32)> {
     let mut all: Vec<(i32, i32)> = Vec::new();
 
     let input_one: Vec<i32> = (0..=99).map(|n| n ).collect();
@@ -138,21 +165,7 @@ fn part2(input: &[i32]) {
         }
     }
 
-    let mut found = false;
-    while !found {
-        let possible_input = all.pop().unwrap();
-        let mut data: Vec<i32> = input.into();
-        data[1] = possible_input.0;
-        data[2] = possible_input.1;
-        let mut program = IntCode::new(data.into());
-        program.execute();
-
-        found = program.data[0] == 19690720;
-        if(found) {
-            print!("{}", 100 * possible_input.0 + possible_input.1)
-        }
-    }
-
+    all
 }
 
 #[cfg(test)]
@@ -161,7 +174,9 @@ mod tests {
 
     // replace this with real test
     #[test]
-    fn test_this() {
-        assert!(true)
+    fn test_program_execute() {
+        let mut program = IntCode::new(vec![1,9,10,3,2,3,11,0,99,30,40,50]);
+        program.execute();
+        assert_eq!(program.data[0], 3500);
     }
 }
