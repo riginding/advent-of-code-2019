@@ -1,0 +1,8 @@
+[workspace]
+members = [
+  "day1",
+  "day2"
+]
+
+[profile.release]
+panic = "abort"

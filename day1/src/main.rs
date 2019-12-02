@@ -33,7 +33,7 @@ fn calculate_recursive_fuel(mass: i32) -> i32 {
     let _mass = calculate_fuel(mass);
 
     if _mass > 0 {
-       _mass + calculate_recursive_fuel(_mass)
+        _mass + calculate_recursive_fuel(_mass)
     } else {
         0
     }
@@ -50,7 +50,6 @@ fn grab_input() -> std::io::Result<Vec<i32>> {
 
     Ok(input)
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -73,14 +72,14 @@ mod tests {
     #[test]
     fn test_part1() {
         assert_eq!(part1(&[12]), 2);
-        assert_eq!(part1(&[12,12,12]), 6);
-        assert_eq!(part1(&[120,399,42]), 181);
+        assert_eq!(part1(&[12, 12, 12]), 6);
+        assert_eq!(part1(&[120, 399, 42]), 181);
     }
 
     #[test]
     fn test_part2() {
         assert_eq!(part2(&[12]), 2);
-        assert_eq!(part2(&[12,12,12]), 6);
-        assert_eq!(part2(&[120,399,42]), 247);
+        assert_eq!(part2(&[12, 12, 12]), 6);
+        assert_eq!(part2(&[120, 399, 42]), 247);
     }
 }
