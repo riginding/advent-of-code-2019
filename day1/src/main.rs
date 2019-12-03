@@ -37,10 +37,7 @@ fn calculate_recursive_fuel(mass: i32) -> i32 {
 
 fn grab_input() -> std::io::Result<Vec<i32>> {
     let string = include_str!("./input").trim();
-    let input: Vec<i32> = string
-        .lines()
-        .map(|x| x.parse().unwrap())
-        .collect();
+    let input: Vec<i32> = string.lines().map(|x| x.parse().unwrap()).collect();
 
     Ok(input)
 }

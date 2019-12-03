@@ -93,16 +93,12 @@ impl IntCode {
                 input_a,
                 input_b,
                 output,
-            } => {
-                self.data[output] = self.data[input_a] + self.data[input_b]
-            }
+            } => self.data[output] = self.data[input_a] + self.data[input_b],
             OpCode::Multiply {
                 input_a,
                 input_b,
                 output,
-            } => {
-                self.data[output] = self.data[input_a] * self.data[input_b]
-            }
+            } => self.data[output] = self.data[input_a] * self.data[input_b],
         };
     }
 }
@@ -146,18 +142,17 @@ fn part2(input: &[i32]) {
                 if found {
                     println!("2: {}", 100 * input1 + input2)
                 }
-            },
+            }
             None => break,
         }
-
     }
 }
 
 fn generate_possible_inputs() -> Vec<(i32, i32)> {
     let mut all: Vec<(i32, i32)> = Vec::new();
 
-    let input_one: Vec<i32> = (0..=99).map(|n| n ).collect();
-    let input_two: Vec<i32> = (0..=99).map(|n| n ).collect();
+    let input_one: Vec<i32> = (0..=99).map(|n| n).collect();
+    let input_two: Vec<i32> = (0..=99).map(|n| n).collect();
 
     for i in &input_one {
         for j in &input_two {
@@ -175,7 +170,7 @@ mod tests {
     // replace this with real test
     #[test]
     fn test_program_execute() {
-        let mut program = IntCode::new(vec![1,9,10,3,2,3,11,0,99,30,40,50]);
+        let mut program = IntCode::new(vec![1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50]);
         program.execute();
         assert_eq!(program.data[0], 3500);
     }
