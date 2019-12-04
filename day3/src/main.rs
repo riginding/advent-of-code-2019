@@ -1,292 +1,53 @@
-use ::std::convert::TryFrom;
-use std::collections::HashSet;
-use std::hash::{Hash, Hasher};
-use std::iter::FromIterator;
+use std::collections::HashMap;
 
 fn main() {
-    let (first, second) = get_wires();
-    part1(first, second);
-
-    let (mut first, mut second) = get_wires();
-    part2(first, second);
+    let input = include_str!("./input.txt");
+    println!("1: {}", find_intersection(input, CostFunction::Manhattan));
+    println!("2: {}", find_intersection(input, CostFunction::Steps));
 }
 
-fn part1(first: Directions, second: Directions) {
-    let mut origin = Point {
-        x: 0,
-        y: 0,
-        step_1: None,
-        step_2: None,
-    };
-    let first_path_points: HashSet<Point> = HashSet::from_iter(origin.draw_wires(first, true));
-    let second_path_points: HashSet<Point> = HashSet::from_iter(origin.draw_wires(second, false));
+enum CostFunction {
+    Manhattan,
+    Steps,
+}
 
-    let intersection_of_paths = first_path_points.intersection(&second_path_points);
+fn find_intersection(input: &str, cost: CostFunction) -> i32 {
+    // (Point): (first|second): step_count
+    let mut map: HashMap<(i32, i32), HashMap<&str, i32>> = Default::default();
+    let mut orig_wires = vec!["first", "second"];
+    let mut wires = orig_wires.clone();
 
-    let mut min_value = 999_999;
+    for line in input.lines() {
+        let mut x = 0i32;
+        let mut y = 0i32;
+        let wire = wires.pop().unwrap();
 
-    for point in intersection_of_paths {
-        let current_value = point.manhattan_distance();
-        if current_value < min_value {
-            min_value = current_value;
+        let mut step_counter = 0;
+        for instruction in line.split(',') {
+            let (step_x, step_y) = match instruction.chars().next().unwrap() {
+                'L' => (-1, 0),
+                'R' => (1, 0),
+                'D' => (0, -1),
+                'U' => (0, 1),
+                _ => panic!("Error while parsing instruction"),
+            };
+
+            for _ in 0..instruction[1..].parse::<i32>().unwrap() {
+                x += step_x;
+                y += step_y;
+
+                step_counter += 1;
+                *map.entry((x, y)).or_default().entry(wire).or_default() = step_counter;
+            }
         }
     }
 
-    println!("1: {}", min_value);
-}
-
-fn part2(mut first: Directions, mut second: Directions) {
-    let mut origin = Point {
-        x: 0,
-        y: 0,
-        step_1: None,
-        step_2: None,
-    };
-    let first_path_points: HashSet<Point> = HashSet::from_iter(origin.draw_wires(first, true));
-    let second_path_points: HashSet<Point> = HashSet::from_iter(origin.draw_wires(second, false));
-
-    let intersection_of_paths = first_path_points.intersection(&second_path_points);
-    dbg!(intersection_of_paths);
-}
-
-#[derive(Debug)]
-enum Direction {
-    Down(i32),
-    Up(i32),
-    Left(i32),
-    Right(i32),
-}
-
-#[derive(Debug, Clone)]
-struct Point {
-    x: i32,
-    y: i32,
-    step_1: Option<i32>,
-    step_2: Option<i32>,
-}
-
-impl PartialEq for Point {
-    fn eq(&self, other: &Self) -> bool {
-        self.x == other.x && self.y == other.y
-    }
-}
-
-impl Eq for Point {}
-
-impl Hash for Point {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.x.hash(state);
-        self.y.hash(state);
-    }
-}
-
-impl Point {
-    fn new1(x: i32, y: i32) -> Point {
-        Point {
-            x,
-            y,
-            step_1: Some(0),
-            step_2: None,
-        }
-    }
-
-    fn new2(x: i32, y: i32) -> Point {
-        Point {
-            x,
-            y,
-            step_1: None,
-            step_2: Some(0),
-        }
-    }
-
-    fn manhattan_distance(&self) -> i32 {
-        self.x.abs() + self.y.abs()
-    }
-
-    fn draw_wires(&mut self, wire: Directions, first: bool) -> Vec<Point> {
-        let mut start = Point {
-            x: self.x,
-            y: self.y,
-            step_1: self.step_1,
-            step_2: self.step_2,
-        };
-        let mut points = Vec::new();
-
-        for direction in wire {
-            let (new_points, new_start) = start.draw(direction, first);
-            start = new_start;
-            points.extend_from_slice(&new_points);
-        }
-
-        points
-    }
-
-    fn draw(&self, direction: Direction, first: bool) -> (Vec<Point>, Point) {
-        let start = Point {
-            x: self.x,
-            y: self.y,
-            step_1: self.step_1,
-            step_2: self.step_2,
-        };
-        let points = match direction {
-            Direction::Up(times) => start.up(times, first),
-            Direction::Down(times) => start.down(times, first),
-            Direction::Left(times) => start.left(times, first),
-            Direction::Right(times) => start.right(times, first),
-        };
-
-        let last_point = points.last().unwrap().clone();
-        (points, last_point)
-    }
-
-    fn up(&self, times: i32, first: bool) -> Vec<Point> {
-        let mut points = Vec::new();
-
-        for i in 0..times {
-            points.push(if first {
-                Point {
-                    x: self.x,
-                    y: self.y + i + 1,
-                    step_1: Some(match self.step_1 {
-                        Some(x) => x + 1,
-                        None => 1,
-                    }),
-                    step_2: self.step_2,
-                }
-            } else {
-                Point {
-                    x: self.x,
-                    y: self.y + i + 1,
-                    step_1: self.step_1,
-                    step_2: Some(match self.step_2 {
-                        Some(x) => x + 1,
-                        None => 1,
-                    }),
-                }
-            })
-        }
-
-        points
-    }
-
-    fn down(&self, times: i32, first: bool) -> Vec<Point> {
-        let mut points = Vec::new();
-
-        for i in 0..times {
-            points.push(if first {
-                Point {
-                    x: self.x,
-                    y: self.y - i - 1,
-                    step_1: Some(match self.step_1 {
-                        Some(x) => x + 1,
-                        None => 1,
-                    }),
-                    step_2: self.step_2,
-                }
-            } else {
-                Point {
-                    x: self.x,
-                    y: self.y - i - 1,
-                    step_1: self.step_1,
-                    step_2: Some(match self.step_2 {
-                        Some(x) => x + 1,
-                        None => 1,
-                    }),
-                }
-            })
-        }
-
-        points
-    }
-
-    fn right(&self, times: i32, first: bool) -> Vec<Point> {
-        let mut points = Vec::new();
-
-        for i in 0..times {
-            points.push(if first {
-                Point {
-                    x: self.x + i + 1,
-                    y: self.y,
-                    step_1: Some(match self.step_1 {
-                        Some(x) => x + 1,
-                        None => 1,
-                    }),
-                    step_2: self.step_2,
-                }
-            } else {
-                Point {
-                    x: self.x + i + 1,
-                    y: self.y,
-                    step_1: self.step_1,
-                    step_2: Some(match self.step_2 {
-                        Some(x) => x + 1,
-                        None => 1,
-                    }),
-                }
-            });
-        }
-
-        points
-    }
-
-    fn left(&self, times: i32, first: bool) -> Vec<Point> {
-        let mut points = Vec::new();
-
-        for i in 0..times {
-            points.push(if first {
-                Point {
-                    x: self.x - i - 1,
-                    y: self.y,
-                    step_1: Some(match self.step_1 {
-                        Some(x) => x + 1,
-                        None => 1,
-                    }),
-                    step_2: self.step_2,
-                }
-            } else {
-                Point {
-                    x: self.x - i - 1,
-                    y: self.y,
-                    step_1: self.step_1,
-                    step_2: Some(match self.step_2 {
-                        Some(x) => x + 1,
-                        None => 1,
-                    }),
-                }
-            });
-        }
-
-        points
-    }
-}
-
-impl TryFrom<&str> for Direction {
-    type Error = &'static str;
-
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        match value.chars().next() {
-            Some('D') => Ok(Direction::Down(value[1..].parse::<i32>().unwrap())),
-            Some('U') => Ok(Direction::Up(value[1..].parse::<i32>().unwrap())),
-            Some('L') => Ok(Direction::Left(value[1..].parse::<i32>().unwrap())),
-            Some('R') => Ok(Direction::Right(value[1..].parse::<i32>().unwrap())),
-            _ => Err("no such direction"),
-        }
-    }
-}
-
-type Directions = Vec<Direction>;
-
-fn get_wires() -> (Directions, Directions) {
-    let strings = include_str!("./input.txt");
-    let lines: Vec<&str> = strings.lines().collect();
-    let first_path: Directions = lines[0]
-        .split(",")
-        .map(|x| Direction::try_from(x).unwrap())
-        .collect();
-    let second_path: Directions = lines[1]
-        .split(",")
-        .map(|x| Direction::try_from(x).unwrap())
-        .collect();
-
-    (first_path, second_path)
+    map.into_iter()
+        .filter(|(_, matches)| matches.len() == orig_wires.len())
+        .map(|((x, y), steps)| match cost {
+            CostFunction::Manhattan => x.abs() + y.abs(),
+            CostFunction::Steps => steps.values().sum::<i32>(),
+        })
+        .min()
+        .unwrap_or(0)
 }
