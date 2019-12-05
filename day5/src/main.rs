@@ -9,25 +9,26 @@ fn main() -> std::io::Result<()> {
 
     let mut program = IntCode::new(input.into(), 5);
     program.execute();
-    println!("1: {}", program.output);
+    println!("2: {}", program.output);
+
     Ok(())
 }
 
 #[derive(Debug)]
 enum OpCode {
     Add {
-        input_a: i64,
+        input_a: i32,
         immediate_a: bool,
-        input_b: i64,
+        input_b: i32,
         immediate_b: bool,
-        output: i64,
+        output: usize,
     },
     Multiply {
-        input_a: i64,
+        input_a: i32,
         immediate_a: bool,
-        input_b: i64,
+        input_b: i32,
         immediate_b: bool,
-        output: i64,
+        output: usize,
     },
     Save {
         address: usize,
@@ -37,81 +38,87 @@ enum OpCode {
         address: usize,
     },
     JumpIfTrue {
-        comparison: usize,
+        comparison: i32,
         immediate_cmp: bool,
-        adress: usize,
+        address: usize,
+        immediate_adr: bool,
     },
     JumpIfFalse {
-        comparison: usize,
+        comparison: i32,
         immediate_cmp: bool,
-        adress: usize,
+        address: usize,
+        immediate_adr: bool,
     },
     LessThan {
-        comparison_a: usize,
+        comparison_a: i32,
         immediate_a: bool,
-        comparison_b: usize,
+        comparison_b: i32,
         immediate_b: bool,
         result: usize,
     },
     Equals {
-        comparison_a: usize,
+        comparison_a: i32,
         immediate_a: bool,
-        comparison_b: usize,
+        comparison_b: i32,
         immediate_b: bool,
         result: usize,
     },
     Done,
 }
 
-impl TryFrom<Vec<i64>> for OpCode {
+impl TryFrom<Vec<i32>> for OpCode {
     type Error = &'static str;
 
-    fn try_from(value: Vec<i64>) -> Result<Self, Self::Error> {
+    fn try_from(value: Vec<i32>) -> Result<Self, Self::Error> {
         match parse_instruction(value[0]) {
             (1, a, b) => Ok(OpCode::Add {
                 input_a: value[1],
                 immediate_a: a,
                 input_b: value[2],
                 immediate_b: b,
-                output: value[3],
+                output: value[3] as usize,
             }),
             (2, a, b) => Ok(OpCode::Multiply {
                 input_a: value[1],
                 immediate_a: a,
                 input_b: value[2],
                 immediate_b: b,
-                output: value[3],
+                output: value[3] as usize,
             }),
             (3, _, _) => Ok(OpCode::Save {
                 address: value[1] as usize,
             }),
-            (4, immediate_load, _) => Ok({
-                OpCode::Load {
-                    immediate_load,
-                    address: value[1] as usize,
-                }
-            }),
-            (5, cmp, _) => Ok(OpCode::JumpIfTrue {
-                comparison: value[1] as usize,
+            (4, immediate_load, _) => {
+                Ok({
+                    OpCode::Load {
+                        immediate_load,
+                        address: value[1] as usize,
+                    }
+                })
+            }
+            (5, cmp, adr) => Ok(OpCode::JumpIfTrue {
+                comparison: value[1],
                 immediate_cmp: cmp,
-                adress: value[2] as usize,
+                address: value[2] as usize,
+                immediate_adr: adr,
             }),
-            (6, cmp, _) => Ok(OpCode::JumpIfFalse {
-                comparison: value[1] as usize,
+            (6, cmp, adr) => Ok(OpCode::JumpIfFalse {
+                comparison: value[1],
                 immediate_cmp: cmp,
-                adress: value[2] as usize,
+                address: value[2] as usize,
+                immediate_adr: adr
             }),
             (7, a, b) => Ok(OpCode::LessThan {
-                comparison_a: value[1] as usize,
+                comparison_a: value[1],
                 immediate_a: a,
-                comparison_b: value[2] as usize,
+                comparison_b: value[2],
                 immediate_b: b,
                 result: value[3] as usize,
             }),
             (8, a, b) => Ok(OpCode::Equals {
-                comparison_a: value[1] as usize,
+                comparison_a: value[1],
                 immediate_a: a,
-                comparison_b: value[2] as usize,
+                comparison_b: value[2],
                 immediate_b: b,
                 result: value[3] as usize,
             }),
@@ -121,21 +128,21 @@ impl TryFrom<Vec<i64>> for OpCode {
     }
 }
 
-fn parse_instruction(instruction: i64) -> (i64, bool, bool) {
+fn parse_instruction(instruction: i32) -> (i32, bool, bool) {
     (
         instruction % 10,
         instruction / 100 % 10 == 1,
-        instruction / 1000 % 10 == 1,
+        instruction / 1_000 % 10 == 1,
     )
 }
 
 #[derive(Debug)]
 struct IntCode {
-    data: Vec<i64>,
+    data: Vec<i32>,
     cursor_position: usize,
     finished: bool,
-    input: i64,
-    output: i64,
+    input: i32,
+    output: i32,
 }
 
 impl std::fmt::Display for IntCode {
@@ -145,7 +152,7 @@ impl std::fmt::Display for IntCode {
 }
 
 impl IntCode {
-    fn new(data: Vec<i64>, input: i64) -> IntCode {
+    fn new(data: Vec<i32>, input: i32) -> IntCode {
         IntCode {
             data,
             cursor_position: 0,
@@ -165,8 +172,8 @@ impl IntCode {
         !self.finished && self.cursor_position < self.data.len()
     }
 
-    fn get_instructions(&mut self) -> Vec<i64> {
-        let instruction: i64 = self.data[self.cursor_position] % 10;
+    fn get_instructions(&mut self) -> Vec<i32> {
+        let instruction: i32 = self.data[self.cursor_position] % 10;
         let mut result = self.data.as_slice();
         match instruction {
             1 | 2 | 7 | 8 => {
@@ -183,7 +190,6 @@ impl IntCode {
             }
             9 => {
                 result = &self.data[self.cursor_position..=self.cursor_position];
-                self.cursor_position = self.cursor_position + 1;
             }
             _ => panic!("danger"),
         }
@@ -195,7 +201,9 @@ impl IntCode {
         let instruction = self.get_instructions();
         let op_code = OpCode::try_from(instruction).unwrap();
         match op_code {
-            OpCode::Done => self.finished = true,
+            OpCode::Done => {
+                self.finished = true;
+            }
             OpCode::Add {
                 input_a,
                 immediate_a,
@@ -204,19 +212,17 @@ impl IntCode {
                 output,
             } => {
                 let a = if immediate_a {
-                    input_a as i64
+                    input_a
                 } else {
                     self.data[input_a as usize]
                 };
                 let b = if immediate_b {
-                    input_b as i64
+                    input_b
                 } else {
                     self.data[input_b as usize]
                 };
 
-                dbg!(a);
-                dbg!(b);
-                self.data[output as usize] = a + b
+                self.data[output as usize] = a + b;
             }
             OpCode::Multiply {
                 input_a,
@@ -225,23 +231,27 @@ impl IntCode {
                 immediate_b,
                 output,
             } => {
-                self.data[output as usize] = if immediate_a {
-                    input_a as i64
+                let a = if immediate_a {
+                    input_a
                 } else {
                     self.data[input_a as usize]
-                } * if immediate_b {
-                    input_b as i64
+                };
+                let b = if immediate_b {
+                    input_b
                 } else {
                     self.data[input_b as usize]
-                }
+                };
+                self.data[output as usize] = a * b
             }
-            OpCode::Save { address } => self.data[address] = self.input,
+            OpCode::Save { address } => {
+                self.data[address] = self.input;
+            }
             OpCode::Load {
                 address,
                 immediate_load,
             } => {
                 if immediate_load {
-                    self.output = address as i64;
+                    self.output = address as i32;
                 } else {
                     self.output = self.data[address];
                 }
@@ -249,30 +259,48 @@ impl IntCode {
             OpCode::JumpIfTrue {
                 comparison,
                 immediate_cmp,
-                adress,
+                address,
+                immediate_adr,
             } => {
                 if immediate_cmp {
                     if comparison != 0 {
-                        self.cursor_position = adress
+                        if immediate_adr {
+                            self.cursor_position = address;
+                        } else {
+                            self.cursor_position = self.data[address] as usize;
+                        }
                     }
                 } else {
-                    if self.data[comparison] != 0 {
-                        self.cursor_position = adress
+                    if self.data[comparison as usize] != 0 {
+                        if immediate_adr {
+                            self.cursor_position = address;
+                        } else {
+                            self.cursor_position = self.data[address] as usize;
+                        }
                     }
                 }
             }
             OpCode::JumpIfFalse {
                 comparison,
                 immediate_cmp,
-                adress,
+                address,
+                immediate_adr
             } => {
                 if immediate_cmp {
                     if comparison == 0 {
-                        self.cursor_position = adress
+                        if immediate_adr {
+                            self.cursor_position = address;
+                        } else {
+                            self.cursor_position = self.data[address] as usize;
+                        }
                     }
                 } else {
-                    if self.data[comparison] == 0 {
-                        self.cursor_position = adress
+                    if self.data[comparison as usize] == 0 {
+                        if immediate_adr {
+                            self.cursor_position = address;
+                        } else {
+                            self.cursor_position = self.data[address] as usize;
+                        }
                     }
                 }
             }
@@ -283,15 +311,17 @@ impl IntCode {
                 immediate_b,
                 result,
             } => {
-                if if { immediate_a } {
+                let a = if { immediate_a } {
                     comparison_a
                 } else {
-                    self.data[comparison_a] as usize
-                } < if { immediate_b } {
+                    self.data[comparison_a as usize]
+                };
+                let b = if { immediate_b } {
                     comparison_b
                 } else {
-                    self.data[comparison_b] as usize
-                } {
+                    self.data[comparison_b as usize]
+                };
+                if a < b {
                     self.data[result] = 1
                 } else {
                     self.data[result] = 0
@@ -304,15 +334,19 @@ impl IntCode {
                 immediate_b,
                 result,
             } => {
-                if if { immediate_a } {
+                let a = if { immediate_a } {
                     comparison_a
                 } else {
-                    self.data[comparison_a] as usize
-                } == if { immediate_b } {
+                    self.data[comparison_a as usize]
+                };
+
+                let b = if { immediate_b } {
                     comparison_b
                 } else {
-                    self.data[comparison_b] as usize
-                } {
+                    self.data[comparison_b as usize]
+                };
+
+                if a == b {
                     self.data[result] = 1
                 } else {
                     self.data[result] = 0
@@ -322,13 +356,13 @@ impl IntCode {
     }
 }
 
-fn get_input() -> std::io::Result<Vec<i64>> {
+fn get_input() -> std::io::Result<Vec<i32>> {
     let string = include_str!("./input.txt").trim();
 
     let data = string
         .split(',')
-        .map(|x| x.parse::<i64>().unwrap())
-        .collect::<Vec<i64>>();
+        .map(|x| x.parse::<i32>().unwrap())
+        .collect::<Vec<i32>>();
 
     Ok(data)
 }
@@ -405,6 +439,20 @@ mod tests {
         assert_eq!(program.output, 1);
 
         let mut program = IntCode::new(vec![3, 3, 1105, -1, 9, 1101, 0, 0, 12, 4, 12, 99, 1], 0);
+        program.execute();
+        assert_eq!(program.output, 0);
+    }
+
+    #[test]
+    fn countdown() {
+        let mut program = IntCode::new(vec![101,-1,7,7,4,7,1105,11,0,99], 1);
+        program.execute();
+        assert_eq!(program.output, 0);
+    }
+
+    #[test]
+    fn extra_tests() {
+        let mut program = IntCode::new(vec![1, 0, 3, 3, 1005, 2, 10, 5, 1, 0, 4, 1, 99], 1);
         program.execute();
         assert_eq!(program.output, 0);
     }
