@@ -14,7 +14,7 @@ enum CostFunction {
 fn find_intersection(input: &str, cost: CostFunction) -> i32 {
     // (Point): (first|second): step_count
     let mut map: HashMap<(i32, i32), HashMap<&str, i32>> = Default::default();
-    let mut orig_wires = vec!["first", "second"];
+    let orig_wires = vec!["first", "second"];
     let mut wires = orig_wires.clone();
 
     for line in input.lines() {
