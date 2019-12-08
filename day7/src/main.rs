@@ -1,51 +1,20 @@
 use ::std::convert::TryFrom;
+use itertools::Itertools;
 
 fn main() -> std::io::Result<()> {
     let input = get_input()?;
     
     let mut results = Vec::new();
 
-    for c in permutations(5) {
+    for c in (0..=4).permutations(5) {
         let output = get_max_thruster(&c, input.clone());
         results.push(output);
     };
 
-    dbg!(results[results.len()-1]);
-    
-    println!("1: {:?}", results.iter().max());
+    println!("1: {:?}", results.iter().max().unwrap());
 
     Ok(())
 }
-
-pub fn permutations(size: usize) -> Permutations {
-    Permutations { idxs: (0..size).collect(), swaps: vec![0; size], i: 0 }
-}
- 
-pub struct Permutations {
-    idxs: Vec<usize>,
-    swaps: Vec<usize>,
-    i: usize,
-}
- 
-impl Iterator for Permutations {
-    type Item = Vec<usize>;
- 
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.i > 0 {
-            loop {
-                if self.i >= self.swaps.len() { return None; }
-                if self.swaps[self.i] < self.i { break; }
-                self.swaps[self.i] = 0;
-                self.i += 1;
-            }
-            self.idxs.swap(self.i, (self.i & 1) * self.swaps[self.i]);
-            self.swaps[self.i] += 1;
-        }
-        self.i = 1;
-        Some(self.idxs.clone())
-    }
-}
-
 
 fn get_max_thruster(c: &[usize], input: Vec<i32>) -> i32 {
     let mut amp_a = IntCode::new(input.clone(), vec![0, c[0] as i32]);
