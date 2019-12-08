@@ -88,14 +88,12 @@ impl TryFrom<Vec<i32>> for OpCode {
             (3, _, _) => Ok(OpCode::Save {
                 address: value[1] as usize,
             }),
-            (4, immediate_load, _) => {
-                Ok({
-                    OpCode::Load {
-                        immediate_load,
-                        address: value[1] as usize,
-                    }
-                })
-            }
+            (4, immediate_load, _) => Ok({
+                OpCode::Load {
+                    immediate_load,
+                    address: value[1] as usize,
+                }
+            }),
             (5, cmp, adr) => Ok(OpCode::JumpIfTrue {
                 comparison: value[1],
                 immediate_cmp: cmp,
@@ -106,7 +104,7 @@ impl TryFrom<Vec<i32>> for OpCode {
                 comparison: value[1],
                 immediate_cmp: cmp,
                 address: value[2] as usize,
-                immediate_adr: adr
+                immediate_adr: adr,
             }),
             (7, a, b) => Ok(OpCode::LessThan {
                 comparison_a: value[1],
@@ -284,7 +282,7 @@ impl IntCode {
                 comparison,
                 immediate_cmp,
                 address,
-                immediate_adr
+                immediate_adr,
             } => {
                 if immediate_cmp {
                     if comparison == 0 {
@@ -445,7 +443,7 @@ mod tests {
 
     #[test]
     fn countdown() {
-        let mut program = IntCode::new(vec![101,-1,7,7,4,7,1105,11,0,99], 1);
+        let mut program = IntCode::new(vec![101, -1, 7, 7, 4, 7, 1105, 11, 0, 99], 1);
         program.execute();
         assert_eq!(program.output, 0);
     }

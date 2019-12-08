@@ -9,6 +9,3 @@ members = [
   "day7",
   "day8",
 ]
-
-[profile.release]
-panic = "abort"
